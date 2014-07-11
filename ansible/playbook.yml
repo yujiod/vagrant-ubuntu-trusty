@@ -4,6 +4,7 @@
   sudo: yes
   tasks:
     - hostname: name=ubuntu
+    - file: src=/usr/share/zoneinfo/Asia/Tokyo dest=/etc/localtime state=link force=yes
 
     - lineinfile: dest=/etc/apt/sources.list.d/docker.list create=yes line="deb https://get.docker.io/ubuntu docker main"
     - apt_key: keyserver=keyserver.ubuntu.com id=0xD8576A8BA88D21E9
@@ -24,12 +25,16 @@
         - vim
         - mysql-server
         - lxc-docker
+        - git
+        - unzip
+
+    - lineinfile: dest=/etc/default/docker line='DOCKER_OPTS="--bip=192.168.254.1/24"' insertafter=EOF
 
     - lineinfile: dest=/etc/apache2/envvars regexp="^export APACHE_RUN_USER" line="export APACHE_RUN_USER=vagrant"
     - lineinfile: dest=/etc/apache2/envvars regexp="^export APACHE_RUN_GROUP" line="export APACHE_RUN_GROUP=vagrant"
 
-    - lineinfile : dest=/etc/apache2/sites-available/000-default.conf regexp="DocumentRoot" line="DocumentRoot /vagrant/www"
-    - lineinfile : dest=/etc/apache2/sites-available/000-default.conf line={{item}} insertafter=EOF
+    - lineinfile: dest=/etc/apache2/sites-available/000-default.conf regexp="DocumentRoot" line="DocumentRoot /vagrant/www"
+    - lineinfile: dest=/etc/apache2/sites-available/000-default.conf line={{item}} insertafter=EOF
       with_items:
         - "'<Directory /vagrant/www>'"
         - "'AllowOverride All'"
@@ -43,6 +48,7 @@
     - lineinfile : dest=/etc/apache2/sites-available/default-ssl.conf regexp="DocumentRoot" line="DocumentRoot /vagrant/www"
 
     - lineinfile : dest=/etc/php5/apache2/php.ini regexp=";?date\.timezone.*" line="date.timezone = Asia/Tokyo"
+    - command: /usr/sbin/php5enmod mcrypt creates=/etc/php5/apache2/conf.d/20-mcrypt.ini
 
     - service: name=apache2 state=restarted
     - service: name=mysql state=restarted
